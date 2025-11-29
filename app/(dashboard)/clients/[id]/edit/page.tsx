@@ -1,32 +1,37 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getClientById, updateClient } from '@/services/api';
+import { getClientById, updateClient,Client } from '@/services/api';
 
-export default function EditClientPage({ params }: { params: { id: string } }) {
+export default function EditClientPage({ params }: { params: Promise <{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [loading, setLoading] = useState(true);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     ruc: '',
     address: '',
-    email: ''
+    email: '',
+    phone: ''
   });
 
-  // Cargar datos del cliente existente usando el ID de la URL
-  useEffect(() => {
+ useEffect(() => {
     const fetchClient = async () => {
-      const client = await getClientById(params.id);
+    const client = await getClientById(id);
+      
       if (client) {
+        setDocumentId(client.documentId);        
         setFormData({
           name: client.name,
           ruc: client.ruc,
           address: client.address,
-          email: client.email
+          email: client.email,
+          phone: client.phone || ''
         });
       } else {
         alert("Cliente no encontrado");
@@ -34,10 +39,9 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
       }
       setLoading(false);
     };
-    
-    // Solo ejecutamos si hay ID 
-    if (params.id) fetchClient();
-  }, [params.id, router]);
+
+   if (id) fetchClient();
+  }, [id, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,7 +49,10 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateClient(params.id, formData);
+    if (!documentId) return; 
+
+    await updateClient(documentId, formData);
+    
     alert('Cliente actualizado correctamente');
     router.push('/clients');
   };

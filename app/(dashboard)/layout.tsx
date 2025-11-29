@@ -47,11 +47,11 @@ export default function DashboardLayout({
             Facturas
           </a>
 
-          {/* Configuración (Nuevo) */}
+          {/* Configuración (Nuevo)
           <a href="/settings" className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
             <Cog6ToothIcon className="h-5 w-5 mr-3" />
             Configuración
-          </a>
+          </a> */}
         </nav>
 
         {/* Botón Cerrar Sesión */}

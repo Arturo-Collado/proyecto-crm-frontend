@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
-// Asegúrate de tener el archivo services/api.ts creado antes de guardar esto
 import { loginUser } from '@/services/api';
 import Link from 'next/link';
 
@@ -18,14 +17,20 @@ export default function LoginPage() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     try {
-      await loginUser({ identifier: data.email, password: data.password });
-      // Si el login es exitoso, vamos al dashboard
+      const response = await loginUser({ identifier: email, password: password });
+      
+      localStorage.setItem('crm_token', response.jwt);
+      localStorage.setItem('crm_user', JSON.stringify(response.user));
+
       router.push('/dashboard');
-    } catch (err) {
-      setError('Credenciales incorrectas. Por favor intente nuevamente.');
+      
+    } catch (err: any) {
+      console.error(err);
+      setError('Correo o contraseña incorrectos.');
     } finally {
       setLoading(false);
     }

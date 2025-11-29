@@ -8,7 +8,7 @@ import { getClients, deleteClient, Client } from '@/services/api';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
-  const [searchTerm, setSearchTerm] = useState(''); // Estado del buscador
+  const [searchTerm, setSearchTerm] = useState(''); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,14 +21,13 @@ export default function ClientsPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (client: Client) => {
     if (confirm('¿Eliminar cliente?')) {
-      await deleteClient(id);
+      await deleteClient(client.documentId);
       loadClients();
     }
   };
 
-  // Lógica de Filtrado
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.ruc.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,7 +69,7 @@ export default function ClientsPage() {
           <thead className="bg-gray-100 border-b">
             <tr>
               <th className="px-6 py-3 font-medium text-gray-600">Nombre</th>
-              <th className="px-6 py-3 font-medium text-gray-600">RUC</th>
+              <th className="px-6 py-3 font-medium text-gray-600">Identificacion</th>
               <th className="px-6 py-3 font-medium text-gray-600">Email</th>
               <th className="px-6 py-3 font-medium text-gray-600 text-right">Acciones</th>
             </tr>
@@ -78,13 +77,13 @@ export default function ClientsPage() {
           <tbody>
             {/* Usamos filteredClients en vez de clients */}
             {filteredClients.map((client) => (
-              <tr key={client.id} className="border-b hover:bg-gray-50">
+              <tr key={client.documentId} className="border-b hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium text-gray-800">{client.name}</td>
                 <td className="px-6 py-4 text-gray-600">{client.ruc}</td>
                 <td className="px-6 py-4 text-gray-600">{client.email}</td>
                 <td className="px-6 py-4 flex justify-end space-x-3">
-                  <Link href={`/clients/${client.id}/edit`} className="text-indigo-600"><PencilIcon className="h-5 w-5" /></Link>
-                  <button onClick={() => handleDelete(client.id)} className="text-red-600"><TrashIcon className="h-5 w-5" /></button>
+                  <Link href={`/clients/${client.documentId}/edit`} className="text-indigo-600"><PencilIcon className="h-5 w-5" /></Link>
+                  <button onClick={() => handleDelete(client)} className="text-red-600"><TrashIcon className="h-5 w-5" /></button>
                 </td>
               </tr>
             ))}

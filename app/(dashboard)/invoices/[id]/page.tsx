@@ -1,28 +1,30 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 
 import { getInvoiceById, getCompanySettings, Invoice, Client, CompanySettings } from '@/services/api';
 import { PrinterIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 
-export default function ViewInvoicePage({ params }: { params: { id: string } }) {
+export default function ViewInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [company, setCompany] = useState<CompanySettings | null>(null); // Estado para la empresa
+  const [company, setCompany] = useState<CompanySettings | null>(null); 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    //factura Y configuración al mismo tiempo
+ useEffect(() => {
+    if (!id) return;
+    
     Promise.all([
-      getInvoiceById(params.id),
+      getInvoiceById(id),
       getCompanySettings()
     ]).then(([invData, compData]) => {
       setInvoice(invData);
       setCompany(compData);
       setLoading(false);
     });
-  }, [params.id]);
+  }, [id]);
 
   if (loading) return <div className="p-10 text-center">Cargando documento...</div>;
   if (!invoice || !company) return <div className="p-10 text-center">Datos no disponibles</div>;
@@ -48,7 +50,7 @@ export default function ViewInvoicePage({ params }: { params: { id: string } }) 
         <div className="flex justify-between items-start border-b pb-8 mb-8">
           <div>
             <h1 className="text-4xl font-bold text-[--primary-color]">FACTURA</h1>
-            <p className="text-gray-500 mt-1">#{invoice.id}</p>
+            <p className="text-gray-500 mt-1">#{invoice.codigo}</p>
           </div>
           <div className="text-right">
             {/* Usamos los datos de la empresa */}
@@ -66,7 +68,7 @@ export default function ViewInvoicePage({ params }: { params: { id: string } }) 
             <h3 className="text-gray-600 font-bold uppercase text-xs mb-2">Facturar a:</h3>
             <p className="font-bold text-gray-800 text-lg">{client.name || 'Consumidor Final'}</p>
             <p className="text-gray-500">{client.address}</p>
-            <p className="text-gray-500">RUC: {client.ruc}</p>
+            <p className="text-gray-500">Identificacion: {client.ruc}</p>
           </div>
           {/* ... */}
         </div>
@@ -76,14 +78,14 @@ export default function ViewInvoicePage({ params }: { params: { id: string } }) 
             {/* ... (contenido de la tabla igual que antes) ... */}
             <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="text-left py-3 px-4 font-bold text-gray-600 text-sm uppercase">Descripción</th>
+              <th className="text-left py-3 px-4 font-bold text-gray-600 text-sm uppercase">Producto</th>
               <th className="text-center py-3 px-4 font-bold text-gray-600 text-sm uppercase">Cant.</th>
               <th className="text-right py-3 px-4 font-bold text-gray-600 text-sm uppercase">Precio Unit.</th>
               <th className="text-right py-3 px-4 font-bold text-gray-600 text-sm uppercase">Total</th>
             </tr>
           </thead>
           <tbody>
-            {invoice.items?.map((item: any, index: number) => (
+            {invoice.items.map((item, index) => (
               <tr key={index} className="border-b border-gray-100">
                 <td className="py-3 px-4 text-gray-800">{item.description}</td>
                 <td className="py-3 px-4 text-center text-gray-600">{item.quantity}</td>

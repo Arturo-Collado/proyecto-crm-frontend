@@ -9,9 +9,14 @@ import { createProduct } from '@/services/api';
 
 export default function NewProductPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: '', sku: '', price: 0, stock: 0 });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    description: '', 
+    price: 0, 
+    stock: 0 
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
@@ -34,14 +39,19 @@ export default function NewProductPage() {
             <label className="block text-sm font-medium text-gray-700">Nombre</label>
             <input type="text" name="name" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" onChange={handleChange} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">SKU</label>
-            <input type="text" name="sku" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" onChange={handleChange} />
-          </div>
+           <div>
+           <label className="block text-sm font-medium text-gray-700">Descripción</label>
+           <textarea 
+             name="description" 
+             rows={3}
+             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:border-[--primary-color]" 
+             onChange={handleChange} 
+           />
+        </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Precio ($)</label>
+            <label className="block text-sm font-medium text-gray-700">Precio (c$)</label>
             <input type="number" name="price" step="0.01" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" onChange={handleChange} />
           </div>
           <div>

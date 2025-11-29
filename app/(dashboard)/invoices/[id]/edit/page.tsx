@@ -1,49 +1,53 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { DocumentPlusIcon, UserCircleIcon, CalendarIcon, TrashIcon } from '@heroicons/react/24/solid';
-import { getProducts, getClients, getInvoiceById, updateInvoice, Product, Client } from '@/services/api';
+import { getProducts, getClients, getInvoiceById, updateInvoice, Product, Client, Invoice } from '@/services/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function EditInvoicePage({ params }: { params: { id: string } }) {
+export default function EditInvoicePage({ params }: { params: Promise <{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [loading, setLoading] = useState(true);
   const [productsDB, setProductsDB] = useState<Product[]>([]);
   const [clientsDB, setClientsDB] = useState<Client[]>([]);
-  
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [selectedClient, setSelectedClient] = useState('');
   const [date, setDate] = useState('');
   const [lines, setLines] = useState<any[]>([]);
 
   useEffect(() => {
-    const init = async () => {
-      const [pData, cData, invData] = await Promise.all([getProducts(), getClients(), getInvoiceById(params.id)]);
+      const init = async () => {
+      const [pData, cData, invData] = await Promise.all([getProducts(), getClients(), getInvoiceById(id)]);
       
       if (!invData) { alert("Factura no encontrada"); return router.push('/invoices'); }
 
       setProductsDB(pData);
       setClientsDB(cData);
+      setCurrentInvoice(invData); // Guardamos la factura completa
       
-      // Cargar datos existentes
-      setSelectedClient(typeof invData.client === 'object' ? String(invData.client.id) : String(invData.client));
+      setSelectedClient(
+        typeof invData.client === 'object' 
+        ? (invData.client.documentId || String(invData.client.id)) 
+        : String(invData.client)
+        );
       setDate(invData.date);
       setLines(invData.items || []);
       setLoading(false);
     };
     init();
-  }, [params.id, router]);
+  }, [id, router]);
 
   const addLine = () => setLines([...lines, { id: Date.now(), productId: '', description: '', quantity: 1, price: 0 }]);
-  const removeLine = (id: number) => setLines(lines.filter(l => l.id !== id));
-
-  const handleLineChange = (id: number, field: string, value: any) => {
-    const newLines = lines.map(line => {
-      if (line.id === id) {
+  const removeLine = (lineId: number) => setLines(lines.filter(l => l.id !== lineId));
+  const handleLineChange = (lineId: number, field: string, value: any) => {
+  const newLines = lines.map(line => {
+      if (line.id === lineId) {
         const updated = { ...line, [field]: value };
         if (field === 'productId') {
-          const prod = productsDB.find(p => String(p.id) === String(value));
+          const prod = productsDB.find(p => p.documentId === value);
           if (prod) { updated.price = prod.price; updated.description = prod.name; }
         }
         return updated;
@@ -58,7 +62,15 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateInvoice(params.id, { client: selectedClient, date, items: lines, total });
+    if (!currentInvoice) return;
+
+    await updateInvoice(currentInvoice.documentId, { 
+        client: selectedClient, 
+        date, 
+        items: lines, 
+        total 
+    });
+    
     alert("Factura corregida");
     router.push('/invoices');
   };
@@ -69,7 +81,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="flex items-center border-b pb-4 mb-6">
         <DocumentPlusIcon className="h-8 w-8 text-[--primary-color]" />
-        <h1 className="text-2xl font-bold text-gray-800 ml-3">Editar Factura #{params.id}</h1>
+        <h1 className="text-2xl font-bold text-gray-800 ml-3">Editar Factura #{id}</h1>
       </div>
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Mismo formulario que New, pero pre-llenado */}
@@ -77,7 +89,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           <div>
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
             <select className="block w-full border p-2 rounded-md" value={selectedClient} onChange={e => setSelectedClient(e.target.value)}>
-                {clientsDB.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+               {clientsDB.map(c => <option key={c.documentId} value={c.documentId}>{c.name}</option>)}
             </select>
           </div>
           <div>
@@ -92,7 +104,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               <div key={line.id} className="flex gap-2 mb-2 items-center">
                   <select className="border p-2 rounded w-1/3" value={line.productId} onChange={e => handleLineChange(line.id, 'productId', e.target.value)}>
                       <option value="">Producto</option>
-                      {productsDB.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {productsDB.map(p => <option key={p.documentId} value={p.documentId}>{p.name}</option>)}
                   </select>
                   <input type="number" className="border p-2 rounded w-20" value={line.quantity} onChange={e => handleLineChange(line.id, 'quantity', Number(e.target.value))} />
                   <input type="text" className="border p-2 rounded w-24 bg-gray-50" value={line.price} readOnly />

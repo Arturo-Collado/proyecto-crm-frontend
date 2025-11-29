@@ -14,13 +14,11 @@ export default function NewInvoicePage() {
   const [productsDB, setProductsDB] = useState<Product[]>([]);
   const [clientsDB, setClientsDB] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
-  
-  // Estado de las líneas
   const [lines, setLines] = useState([
     { id: Date.now(), productId: '', description: '', quantity: 1, price: 0, maxStock: 0 }
   ]);
 
-  // Cargar datos
+
   useEffect(() => {
     getProducts().then(data => setProductsDB(data));
     getClients().then(data => setClientsDB(data));
@@ -40,23 +38,21 @@ export default function NewInvoicePage() {
       if (line.id === id) {
         let updatedLine = { ...line, [field]: value };
         
-        // Si cambiamos el producto, traemos su precio y su STOCK MÁXIMO
         if (field === 'productId') {
-          const prod = productsDB.find(p => String(p.id) === String(value));
+         const prod = productsDB.find(p => p.documentId === value);
           if (prod) {
             updatedLine.price = prod.price;
             updatedLine.description = prod.name;
-            updatedLine.maxStock = prod.stock || 0; // Guarda cuánto hay disponible
-            updatedLine.quantity = 1; // Resetea a 1
+            updatedLine.maxStock = prod.stock || 0; 
+            updatedLine.quantity = 1; 
           }
         }
 
-        // 2. VALIDACIÓN DE STOCK: Si cambia la cantidad, verificamos que no se pase
         if (field === 'quantity') {
           const qty = Number(value);
           if (line.maxStock > 0 && qty > line.maxStock) {
             alert(`¡Alto ahí! Solo tienes ${line.maxStock} unidades de este producto en inventario.`);
-            updatedLine.quantity = line.maxStock; // Le ponemos el máximo posible
+            updatedLine.quantity = line.maxStock; 
           } else if (qty < 1) {
             updatedLine.quantity = 1;
           }
@@ -77,7 +73,6 @@ export default function NewInvoicePage() {
     e.preventDefault();
     if (!selectedClient) return alert("Selecciona un cliente");
 
-    // Validar una última vez antes de guardar
     for (const line of lines) {
       if (line.maxStock > 0 && line.quantity > line.maxStock) {
         return alert(`Error: El producto "${line.description}" excede el stock disponible.`);
@@ -116,7 +111,11 @@ export default function NewInvoicePage() {
               required
             >
               <option value="">Seleccione un cliente...</option>
-              {clientsDB.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clientsDB.map(c => (
+              <option key={c.documentId} value={c.documentId}>
+                {c.name}
+              </option>
+              ))}
             </select>
           </div>
           <div>
@@ -153,9 +152,9 @@ export default function NewInvoicePage() {
                       <option value="">Seleccionar...</option>
                       {productsDB.map(p => (
                         
-                        <option key={p.id} value={p.id} disabled={p.stock === 0}>
-                          {p.name} {p.stock === 0 ? '(AGOTADO)' : `(Disp: ${p.stock})`}
-                        </option>
+                      <option key={p.documentId} value={p.documentId} disabled={p.stock === 0}>
+                      {p.name} {p.stock === 0 ? '(AGOTADO)' : `(Disp: ${p.stock})`}
+                      </option>
                       ))}
                     </select>
                   </td>
@@ -167,12 +166,11 @@ export default function NewInvoicePage() {
                     <input 
                       type="number" 
                       min="1" 
-                      // El máximo del input es el stock real
                       max={line.maxStock}
                       className="w-full border-gray-300 rounded-md p-1 border text-center"
                       value={line.quantity}
                       onChange={(e) => handleLineChange(line.id, 'quantity', Number(e.target.value))}
-                      disabled={!line.productId} // No puedes poner cantidad si no has elegido producto
+                      disabled={!line.productId} 
                     />
                   </td>
                   <td className="px-4 py-2 text-gray-600">${line.price.toFixed(2)}</td>

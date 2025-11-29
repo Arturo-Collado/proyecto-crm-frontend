@@ -1,29 +1,36 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getProductById, updateProduct } from '@/services/api';
+import { getProductById, updateProduct, Product } from '@/services/api';
 
-export default function EditProductPage({ params }: { params: { id: string } }) {
+export default function EditProductPage({ params }: { params: Promise <{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [loading, setLoading] = useState(true);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    sku: '',
+    description: '',
     price: 0,
+    stock: 0
   });
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const product = await getProductById(params.id);
+      const product = await getProductById(id);
+      
       if (product) {
+        setDocumentId(product.documentId);
+        
         setFormData({
           name: product.name,
-          sku: product.sku,
+          description: product.description || '',
           price: product.price,
+          stock: product.stock
         });
       } else {
         alert("Producto no encontrado");
@@ -31,17 +38,19 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       }
       setLoading(false);
     };
-    if (params.id) fetchProduct();
-  }, [params.id, router]);
+   if (id) fetchProduct();
+  }, [id, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProduct(params.id, formData);
+    if (!documentId) return;
+    await updateProduct(documentId, formData);
+    
     alert('Producto actualizado');
     router.push('/products');
   };
@@ -67,18 +76,27 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">SKU (Código)</label>
+            <label className="block text-sm font-medium text-gray-700">Stock Disponible</label>
             <input
-              type="text" name="sku" required
+              type="number" name="stock" required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:border-[--primary-color]"
-              value={formData.sku}
+              value={formData.stock}
               onChange={handleChange}
             />
           </div>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700">Precio ($)</label>
+            <label className="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea
+              name="description"
+              rows={3}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:border-[--primary-color]"
+              value={formData.description}
+              onChange={handleChange}
+            />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Precio (c$)</label>
           <input
             type="number" name="price" step="0.01" required
             className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm border p-2 focus:border-[--primary-color]"

@@ -7,14 +7,13 @@ import {
   TrashIcon, 
   PencilIcon, 
   EyeIcon, 
-  ArrowDownTrayIcon // Importante para el botón de exportar
+  ArrowDownTrayIcon 
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
-// Importamos tipos y funciones desde nuestra API
 import { getInvoices, deleteInvoice, Invoice, Client } from '@/services/api';
 
 export default function InvoicesPage() {
-  // Estado para almacenar las facturas
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,30 +28,22 @@ export default function InvoicesPage() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("¿Eliminar esta factura?")) {
-       await deleteInvoice(id);
-       loadData();
-    }
-  };
+  const handleDelete = async (invoice: Invoice) => { 
+  if (confirm(`¿Eliminar factura #${invoice.id}?`)) {
+     await deleteInvoice(invoice.documentId); 
+     loadData();
+  }
+};
 
-  // FUNCIÓN PARA EXPORTAR A EXCEL (CSV)
   const exportToCSV = () => {
-    // Encabezados del CSV
-    const headers = ["ID,Cliente,Fecha,Total,Estado"];
-    
-    // Convertir datos. Aquí tipamos 'inv' como Invoice para evitar el error de 'any'
-    const rows = invoices.map((inv: Invoice) => {
-      // Verificamos si client es objeto o ID para obtener el nombre correctamente
-      const clientName = typeof inv.client === 'object' ? (inv.client as Client).name : 'Cliente ' + inv.client;
-      // Formateamos la línea del CSV. Usamos comillas para el nombre por si tiene comas.
+  const headers = ["ID,Cliente,Fecha,Total,Estado"]; 
+  const rows = invoices.map((inv: Invoice) => {
+  const clientName = typeof inv.client === 'object' ? (inv.client as Client).name : 'Cliente ' + inv.client;
       return `${inv.id},"${clientName}",${inv.date},${inv.total},${inv.status}`;
     });
 
-    // Unir encabezados y filas
-    const csvContent = [headers, ...rows].join("\n");
 
-    // Crear el archivo y forzar la descarga
+    const csvContent = [headers, ...rows].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -60,7 +51,7 @@ export default function InvoicesPage() {
     link.setAttribute("download", "reporte_facturas.csv");
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link); // Limpieza
+    document.body.removeChild(link); 
   };
 
   if (loading) return <div className="p-8 text-center">Cargando facturas...</div>;
@@ -112,7 +103,7 @@ export default function InvoicesPage() {
             ) : (
               invoices.map((invoice) => (
                 <tr key={invoice.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-800">#{invoice.id}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">#{invoice.codigo}</td>
                   <td className="px-6 py-4 text-gray-600">
                     {typeof invoice.client === 'object' ? (invoice.client as Client).name : 'Cliente #' + invoice.client}
                   </td>
@@ -137,7 +128,7 @@ export default function InvoicesPage() {
                      </Link>
                      
                      {/* Eliminar Factura */}
-                     <button onClick={() => handleDelete(invoice.id)} className="text-red-500 hover:text-red-700" title="Eliminar">
+                     <button onClick={() => handleDelete(invoice)} className="text-red-500 hover:text-red-700" title="Eliminar">
                         <TrashIcon className="h-5 w-5" />
                      </button>
                   </td>

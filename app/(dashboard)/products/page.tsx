@@ -10,7 +10,7 @@ import { getProducts, deleteProduct, Product } from '@/services/api';
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(''); // Estado para el buscador
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadData();
@@ -22,14 +22,13 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (product: Product) => {
     if (confirm('¿Borrar este producto del inventario?')) {
-      await deleteProduct(id);
+      await deleteProduct(product.documentId);
       loadData();
     }
   };
 
-  // Lógica de Filtrado: Buscamos por Nombre O por SKU
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
@@ -89,7 +88,7 @@ export default function ProductsPage() {
               </tr>
             ) : (
               filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
+                <tr key={product.documentId} className="border-b hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-gray-500 font-mono text-xs">{product.sku}</td>
                   <td className="px-6 py-4 font-medium text-gray-800">{product.name}</td>
                   <td className="px-6 py-4 text-gray-600 font-semibold">${Number(product.price).toFixed(2)}</td>
@@ -106,10 +105,10 @@ export default function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 flex justify-end space-x-3">
-                    <Link href={`/products/${product.id}/edit`} className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50" title="Editar">
+                    <Link href={`/products/${product.documentId}/edit`} className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50" title="Editar">
                       <PencilIcon className="h-5 w-5" />
                     </Link>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50" title="Eliminar">
+                    <button onClick={() => handleDelete(product)} className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50" title="Eliminar">
                       <TrashIcon className="h-5 w-5" />
                     </button>
                   </td>
